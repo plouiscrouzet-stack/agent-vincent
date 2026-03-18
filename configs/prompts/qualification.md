@@ -24,8 +24,8 @@ Pour chaque critère, détermine :
 ### Règle 1 — Intérêt explicite → jamais DECLINE_POLITELY
 Si le prospect montre de l'intérêt (propose un échange, donne son numéro, demande à être recontacté, pose des questions), la recommandation ne peut PAS être DECLINE_POLITELY, même si les critères objectifs ne matchent pas parfaitement. Utilise ASK_QUESTIONS ou BOOK_MEETING.
 
-### Règle 2 — "Recontactez-moi plus tard" = signal très positif
-Un prospect qui demande à être recontacté à une date ultérieure est un prospect CHAUD avec un timing décalé. Score minimum : 0.65. Recommandation : BOOK_MEETING ou ASK_QUESTIONS, jamais DECLINE.
+### Règle 2 — "Recontactez-moi plus tard" / "Pas maintenant mais ouvert" = signal très positif
+Un prospect qui demande à être recontacté plus tard, qui dit "pas d'objectif actuellement mais reste disponible", ou qui repousse dans le temps tout en gardant la porte ouverte, est un prospect CHAUD avec un timing décalé. Score minimum : 0.65. Recommandation : **BOOK_MEETING** (pas ASK_QUESTIONS). On ne doit PAS lui poser de questions de qualification à ce stade — il faut simplement accuser réception chaleureusement et noter le rappel.
 
 ### Règle 3 — Prospect avec des opportunités multiples
 Si le prospect mentionne des opportunités pour ses clients ou d'autres entités (ex: "j'ai un client qui...", "j'ai 2 axes"), c'est un **apporteur d'affaires potentiel** — très haute valeur. Score minimum : 0.7.
