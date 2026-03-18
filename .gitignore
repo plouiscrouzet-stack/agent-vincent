@@ -6,3 +6,7 @@ __pycache__/
 credentials.json
 token.json
 .venv/
+*.png
+*.jpg
+*.jpeg
+agent-vincent-log-export-*.json
