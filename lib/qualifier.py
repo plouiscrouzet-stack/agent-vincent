@@ -2,6 +2,7 @@
 
 import os
 import json
+import time
 import anthropic
 from lib.config import get_prompt
 
@@ -77,14 +78,31 @@ RÈGLES pour les suggested_questions :
 - Formule 1-2 questions max, ultra-ciblées sur les critères manquants (ex: encours en M€, nb lits, CA en M€).
 - Si toutes les métriques nécessaires sont connues, ne propose aucune question et recommande directement BOOK_MEETING ou DECLINE_POLITELY."""
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=800,
-        system=system_prompt,
-        messages=[
-            {"role": "user", "content": user_message}
-        ],
-    )
+    for attempt in range(4):
+        try:
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=800,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": user_message}
+                ],
+            )
+            break
+        except anthropic.APIStatusError as e:
+            if e.status_code == 529 and attempt < 3:
+                wait = 2 ** attempt
+                print(f"   ⏳ API overloaded (qualifier), retry dans {wait}s...")
+                time.sleep(wait)
+                continue
+            raise
+    else:
+        return {
+            "score": 0.5,
+            "recommendation": "ASK_QUESTIONS",
+            "suggested_questions": ["Pourriez-vous me préciser votre activité ?"],
+            "reasoning": "API unavailable after retries",
+        }
 
     result_text = response.content[0].text.strip()
     if "```" in result_text:

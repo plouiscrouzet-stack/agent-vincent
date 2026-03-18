@@ -2,6 +2,7 @@
 
 import os
 import json
+import time
 import anthropic
 from lib.config import get_prompt
 
@@ -85,13 +86,25 @@ def generate_reply(thread_text: str, latest_message: str,
 
 Rédige la réponse email."""
 
-    response = client.messages.create(
-        model="claude-sonnet-4-6",
-        max_tokens=500,
-        system=system_prompt,
-        messages=[
-            {"role": "user", "content": user_message}
-        ],
-    )
+    for attempt in range(4):
+        try:
+            response = client.messages.create(
+                model="claude-sonnet-4-6",
+                max_tokens=500,
+                system=system_prompt,
+                messages=[
+                    {"role": "user", "content": user_message}
+                ],
+            )
+            break
+        except anthropic.APIStatusError as e:
+            if e.status_code == 529 and attempt < 3:
+                wait = 2 ** attempt
+                print(f"   ⏳ API overloaded (responder), retry dans {wait}s...")
+                time.sleep(wait)
+                continue
+            raise
+    else:
+        raise RuntimeError("API Claude indisponible après 4 tentatives")
 
     return response.content[0].text.strip()

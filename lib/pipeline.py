@@ -116,10 +116,13 @@ def process_email(email, client_config: dict, pv, ppx, send: bool = False) -> di
         "campaign_id": email.campaign_id,
     }
 
-    # 1. Texte du message
+    # 1. Texte du message — préférer snippet/preview, sinon nettoyer le HTML
     message_text = email.content_preview or email.body_text or ""
     if not message_text and email.body_html:
-        message_text = re.sub(r"<[^>]+>", "", email.body_html)
+        message_text = clean_html(email.body_html)
+    # Si le texte contient encore du HTML/CSS résiduel, le nettoyer
+    if message_text and ("<" in message_text or "style=" in message_text.lower()):
+        message_text = clean_html(message_text)
     message_text = message_text.strip()[:2000]
 
     print(f"\n{'='*60}")

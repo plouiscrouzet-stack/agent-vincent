@@ -141,7 +141,13 @@ def send_validation_email(
     """
     gmail_email = os.getenv("GMAIL_SENDER_EMAIL")
     gmail_password = os.getenv("GMAIL_APP_PASSWORD")
-    base_url = os.getenv("VALIDATION_BASE_URL", "http://localhost:5001").rstrip("/")
+    # En production Vercel, VERCEL_URL est auto-injecté (sans protocole)
+    vercel_url = os.getenv("VERCEL_URL")
+    if vercel_url:
+        base_url = f"https://{vercel_url}" if not vercel_url.startswith("http") else vercel_url
+    else:
+        base_url = os.getenv("VALIDATION_BASE_URL", "http://localhost:5001")
+    base_url = base_url.rstrip("/")
 
     if not gmail_email or not gmail_password:
         raise ValueError(

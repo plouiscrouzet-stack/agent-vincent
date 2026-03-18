@@ -109,7 +109,7 @@ class PerplexityClient:
                 result = result.split("\n", 1)[1].rsplit("```", 1)[0]
             return json.loads(result)
         except (json.JSONDecodeError, Exception) as e:
-            return {"raw_response": result if 'result' in dir() else str(e)}
+            return {"raw_response": result if 'result' in locals() else str(e)}
 
     def close(self):
         self.client.close()

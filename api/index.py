@@ -136,17 +136,17 @@ def webhook():
         from lib.kv_store import is_processed, mark_processed
 
         # Extraire les données de l'email depuis le payload PlusVibe
-        # PlusVibe envoie les données dans "data" ou directement à la racine
+        # Le webhook PlusVibe envoie les champs directement à la racine
+        # avec des noms différents de l'API Unibox
         email_raw = payload.get("data", payload)
         workspace_id = (
-            payload.get("workspace_id")
-            or email_raw.get("workspace_id")
+            email_raw.get("workspace_id")
             or os.getenv("DEFAULT_WORKSPACE_ID", "6999f3922e0a8f7dc9258774")
         )
 
-        # Parser l'email
+        # Parser l'email — adapter les champs webhook → format interne
         pv = PlusVibeClient()
-        email = pv._parse_email(email_raw)
+        email = pv.parse_webhook_email(email_raw)
 
         if not email.id:
             return jsonify({"status": "ignored", "reason": "no email id"}), 200
@@ -173,7 +173,9 @@ def webhook():
             pv.close()
 
     except Exception as e:
+        import traceback
         print(f"❌ Erreur webhook: {e}")
+        traceback.print_exc()
         return jsonify({"status": "error", "message": str(e)}), 500
 
 

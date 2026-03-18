@@ -232,6 +232,53 @@ class PlusVibeClient:
             raw=raw,
         )
 
+    def parse_webhook_email(self, raw: dict) -> Email:
+        """Parse un email depuis le payload webhook PlusVibe.
+
+        Les champs du webhook sont différents de ceux de l'API Unibox :
+        - webhook: from_email, snippet, body (HTML string), source_thread_id
+        - unibox: from_address_email, content_preview, body ({html, text}), thread_id
+        """
+        body_raw = raw.get("body", "")
+        if isinstance(body_raw, dict):
+            body_html = body_raw.get("html", "")
+            body_text = body_raw.get("text", "")
+        else:
+            body_html = str(body_raw) if body_raw else ""
+            body_text = ""
+
+        # Extraire le texte depuis le snippet (propre) ou le HTML
+        snippet = raw.get("snippet", "")
+
+        # from peut être "Name <email>" ou juste "email"
+        from_email = raw.get("from_email", "")
+        to_field = raw.get("to", "")
+        # Extraire l'email du champ "to" si format "Name <email>"
+        to_email = to_field
+        if "<" in to_field and ">" in to_field:
+            to_email = to_field.split("<")[1].rstrip(">")
+
+        return Email(
+            id=raw.get("id", raw.get("_id", raw.get("source_message_id", ""))),
+            thread_id=raw.get("thread_id", raw.get("source_thread_id")),
+            message_id=raw.get("source_message_id"),
+            subject=raw.get("subject"),
+            body_html=body_html,
+            body_text=body_text,
+            content_preview=snippet,
+            from_email=from_email,
+            to_email=to_email,
+            direction=raw.get("direction"),
+            is_unread=1,
+            label=raw.get("label"),
+            lead_email=from_email,
+            lead_id=raw.get("lead_id", raw.get("parent_lead_id")),
+            campaign_id=raw.get("camp_id"),
+            eaccount=to_email,
+            created_at=raw.get("timestamp_created"),
+            raw=raw,
+        )
+
     def _parse_lead(self, raw: dict) -> Lead:
         return Lead(
             id=raw.get("_id", raw.get("id", "")),
