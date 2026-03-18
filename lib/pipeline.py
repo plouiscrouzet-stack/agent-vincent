@@ -161,6 +161,7 @@ def process_email(email, client_config: dict, pv, ppx, send: bool = False) -> di
                 lead_name=lead_info["name"],
                 lead_email=lead_info["email"],
                 company_name=lead_info["company"],
+                subject=email.subject,
                 qualification_criteria=sectors,
             )
             print(f"   → {perplexity_data.get('company_name', '?')} | {perplexity_data.get('sector', '?')}")
