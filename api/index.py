@@ -164,6 +164,10 @@ def webhook():
         if email.direction != "IN":
             return jsonify({"status": "ignored", "reason": "not inbound"}), 200
 
+        # Marquer comme traité AVANT le pipeline (évite les doublons
+        # si PlusVibe envoie 2 webhooks rapprochés pendant le traitement)
+        mark_processed(email.id)
+
         config = get_config(workspace_id)
         if not config:
             return jsonify({"status": "error", "reason": f"no config for workspace {workspace_id}"}), 400
@@ -171,7 +175,6 @@ def webhook():
         ppx = PerplexityClient()
         try:
             result = process_email(email, config, pv, ppx)
-            mark_processed(email.id)
             return jsonify({"status": "ok", "action": result.get("action")}), 200
         finally:
             ppx.close()

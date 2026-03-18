@@ -183,14 +183,25 @@ def process_email(email, client_config: dict, pv, ppx, send: bool = False) -> di
     print(f"   → {len(thread_emails)} messages dans le thread")
 
     # 5. Qualification
-    print(f"\n⚖️  Qualification en cours...")
-    qualification = qualify_lead(
-        thread_text=thread_text,
-        lead_info=lead_info,
-        perplexity_data=perplexity_data,
-        client_config=client_config,
-        plusvibe_label=email.label,
-    )
+    # Si MEETING_CONFIRMED, forcer BOOK_MEETING (pas de questions de qualif)
+    if category == "MEETING_CONFIRMED":
+        qualification = {
+            "score": 0.85,
+            "recommendation": "BOOK_MEETING",
+            "reasoning": "Le prospect a confirmé ou demandé un meeting — répondre directement avec le lien de réservation.",
+            "criteria_evaluation": [],
+            "suggested_questions": [],
+        }
+        print(f"\n⚖️  Qualification: MEETING_CONFIRMED → BOOK_MEETING automatique (score 0.85)")
+    else:
+        print(f"\n⚖️  Qualification en cours...")
+        qualification = qualify_lead(
+            thread_text=thread_text,
+            lead_info=lead_info,
+            perplexity_data=perplexity_data,
+            client_config=client_config,
+            plusvibe_label=email.label,
+        )
     result["qualification"] = qualification
     print(f"   → Score: {qualification.get('score', '?')} | "
           f"Recommandation: {qualification.get('recommendation', '?')}")
