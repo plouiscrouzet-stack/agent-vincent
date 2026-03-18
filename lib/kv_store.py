@@ -11,8 +11,13 @@ import os
 import json
 from pathlib import Path
 
-TMP_DIR = Path(__file__).parent.parent / ".tmp"
 TTL_7_DAYS = 86400 * 7
+
+# Sur Vercel, /var/task/ est en lecture seule — seul /tmp/ est inscriptible.
+# En local, on utilise .tmp/ dans le projet.
+_LOCAL_TMP = Path(__file__).parent.parent / ".tmp"
+_VERCEL_TMP = Path("/tmp/agent-vincent")
+TMP_DIR = _VERCEL_TMP if os.getenv("VERCEL") else _LOCAL_TMP
 
 
 def _get_redis():
