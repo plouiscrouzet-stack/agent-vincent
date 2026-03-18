@@ -259,7 +259,7 @@ class PlusVibeClient:
             to_email = to_field.split("<")[1].rstrip(">")
 
         return Email(
-            id=raw.get("id", raw.get("_id", raw.get("source_message_id", ""))),
+            id=raw.get("source_message_id", raw.get("id", raw.get("_id", ""))),
             thread_id=raw.get("thread_id", raw.get("source_thread_id")),
             message_id=raw.get("source_message_id"),
             subject=raw.get("subject"),
