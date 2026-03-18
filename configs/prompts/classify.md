@@ -5,7 +5,7 @@ Analyse le dernier message reçu et classe-le dans UNE des catégories suivantes
 
 ## Catégories
 
-- **INTERESTED** : Le prospect montre de l'intérêt, veut en savoir plus, ou est ouvert à un échange
+- **INTERESTED** : Le prospect montre de l'intérêt, veut en savoir plus, est ouvert à un échange, ou demande à être recontacté plus tard (intérêt avec timing décalé)
 - **QUESTION** : Le prospect pose une question (qui êtes-vous, quels acquéreurs, références, etc.)
 - **MEETING_CONFIRMED** : Le prospect confirme un créneau précis (date + heure) pour un call/meeting
 - **OUT_OF_OFFICE** : Message automatique d'absence temporaire (vacation, congés, "je serai de retour le...")
@@ -22,6 +22,7 @@ Analyse le dernier message reçu et classe-le dans UNE des catégories suivantes
 - Si le prospect dit être absent MAIS propose un autre créneau → `INTERESTED`
 - Si le prospect confirme une date/heure spécifique → `MEETING_CONFIRMED`
 - Si le prospect répond juste "ok" ou "d'accord" sans contexte de créneau → `INTERESTED`
+- Si le prospect demande à être recontacté plus tard / donne un timing futur → `INTERESTED` (pas NOT_INTERESTED)
 - En cas de doute entre INTERESTED et QUESTION → `INTERESTED`
 - En cas de doute entre AUTO_REPLY et NOT_INTERESTED : si aucune phrase personnelle adressée à Eric → `AUTO_REPLY`
 
