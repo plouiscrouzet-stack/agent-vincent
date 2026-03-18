@@ -153,20 +153,28 @@ def process_email(email, client_config: dict, pv, ppx, send: bool = False) -> di
     # 3. Enrichissement Perplexity
     lead_info = extract_lead_info(email)
     print(f"\n🔍 Recherche Perplexity sur {lead_info['email']}...")
-    try:
-        sectors = client_config.get("qualification_criteria", {}).get("sectors", [])
-        perplexity_data = ppx.research_lead(
-            lead_name=lead_info["name"],
-            lead_email=lead_info["email"],
-            company_name=lead_info["company"],
-            qualification_criteria=sectors,
-        )
-        result["perplexity"] = perplexity_data
-        print(f"   → {perplexity_data.get('company_name', '?')} | {perplexity_data.get('sector', '?')}")
-    except Exception as e:
-        print(f"   ⚠️  Erreur Perplexity: {e}")
-        perplexity_data = {"error": str(e)}
-        result["perplexity"] = perplexity_data
+    perplexity_data = {"error": "not attempted"}
+    sectors = client_config.get("qualification_criteria", {}).get("sectors", [])
+    for attempt in range(3):
+        try:
+            perplexity_data = ppx.research_lead(
+                lead_name=lead_info["name"],
+                lead_email=lead_info["email"],
+                company_name=lead_info["company"],
+                qualification_criteria=sectors,
+            )
+            print(f"   → {perplexity_data.get('company_name', '?')} | {perplexity_data.get('sector', '?')}")
+            break
+        except Exception as e:
+            if attempt < 2:
+                import time
+                wait = 2 ** attempt
+                print(f"   ⚠️  Erreur Perplexity (tentative {attempt+1}/3), retry dans {wait}s: {e}")
+                time.sleep(wait)
+            else:
+                print(f"   ⚠️  Erreur Perplexity après 3 tentatives: {e}")
+                perplexity_data = {"error": str(e)}
+    result["perplexity"] = perplexity_data
 
     # 4. Thread complet
     print(f"\n📋 Récupération du thread {email.thread_id}...")

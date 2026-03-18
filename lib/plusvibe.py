@@ -274,7 +274,7 @@ class PlusVibeClient:
             lead_email=from_email,
             lead_id=raw.get("lead_id", raw.get("parent_lead_id")),
             campaign_id=raw.get("camp_id"),
-            eaccount=to_email,
+            eaccount=raw.get("eaccount", to_email),
             created_at=raw.get("timestamp_created"),
             raw=raw,
         )

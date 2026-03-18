@@ -58,6 +58,9 @@ def approve(email_id):
         return _page("Déjà traité", "#6366f1", "ℹ️",
                      f"Cet email a déjà été traité : {action}."), 200
 
+    # Marquer immédiatement comme en cours pour éviter le double-clic
+    mark_done(email_id, "APPROVING")
+
     pv = PlusVibeClient()
     try:
         subject = pending["subject"] or ""
@@ -82,8 +85,10 @@ def approve(email_id):
         )
     except Exception as e:
         print(f"❌ Erreur PlusVibe: {e}")
+        # Remettre en attente pour permettre un nouvel essai
+        mark_done(email_id, None)
         return _page("Erreur d'envoi", "#dc2626", "❌",
-                     "Impossible d'envoyer via PlusVibe.", str(e)), 500
+                     "Impossible d'envoyer via PlusVibe. Vous pouvez réessayer.", str(e)), 500
     finally:
         pv.close()
 

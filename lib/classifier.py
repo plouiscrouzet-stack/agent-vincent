@@ -49,4 +49,4 @@ def classify_reply(email_text: str) -> dict:
     try:
         return json.loads(result_text)
     except json.JSONDecodeError:
-        return {"category": "INTERESTED", "reason": f"Parsing failed, default to INTERESTED: {result_text[:100]}"}
+        return {"category": "INTERESTED", "reason": "Parsing failed, default to INTERESTED"}

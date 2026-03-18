@@ -50,11 +50,12 @@ def generate_reply(thread_text: str, latest_message: str,
             f"Secteur identifié: {qualification.get('sector_match', 'inconnu')}"
         )
     elif recommendation == "ASK_QUESTIONS":
-        questions = qualification.get("suggested_questions", [])
+        questions = qualification.get("suggested_questions") or []
+        questions_text = "\n".join(f"  - {q}" for q in questions[:2]) if questions else "  - (aucune question suggérée)"
         qualification_context = (
             f"Pas assez d'infos pour qualifier (score: {qualification.get('score', '?')}).\n"
             f"→ Glisse ces questions naturellement dans ta réponse :\n"
-            + "\n".join(f"  - {q}" for q in questions[:2])
+            + questions_text
         )
     elif recommendation == "DECLINE_POLITELY":
         qualification_context = (
