@@ -184,30 +184,61 @@ def process_email(email, client_config: dict, pv, ppx, send: bool = False) -> di
     print(f"   → {len(thread_emails)} messages dans le thread")
 
     # 5. Qualification
-    # Si MEETING_CONFIRMED, forcer BOOK_MEETING (pas de questions de qualif)
+    print(f"\n⚖️  Qualification en cours...")
+    qualification = qualify_lead(
+        thread_text=thread_text,
+        lead_info=lead_info,
+        perplexity_data=perplexity_data,
+        client_config=client_config,
+        plusvibe_label=email.label,
+    )
+    # Si MEETING_CONFIRMED, forcer BOOK_MEETING (le prospect a déjà dit oui)
     if category == "MEETING_CONFIRMED":
-        qualification = {
-            "score": 0.85,
-            "recommendation": "BOOK_MEETING",
-            "reasoning": "Le prospect a confirmé ou demandé un meeting — répondre directement avec le lien de réservation.",
-            "criteria_evaluation": [],
-            "suggested_questions": [],
-        }
-        print(f"\n⚖️  Qualification: MEETING_CONFIRMED → BOOK_MEETING automatique (score 0.85)")
-    else:
-        print(f"\n⚖️  Qualification en cours...")
-        qualification = qualify_lead(
-            thread_text=thread_text,
-            lead_info=lead_info,
-            perplexity_data=perplexity_data,
-            client_config=client_config,
-            plusvibe_label=email.label,
-        )
+        qualification["recommendation"] = "BOOK_MEETING"
+        qualification["should_respond"] = True
+        if qualification.get("score", 0) < 0.7:
+            qualification["score"] = 0.85
+        print(f"   (MEETING_CONFIRMED → BOOK_MEETING forcé)")
     result["qualification"] = qualification
     print(f"   → Score: {qualification.get('score', '?')} | "
           f"Recommandation: {qualification.get('recommendation', '?')}")
 
-    # 6. Génération de réponse
+    # Collecter les alertes
+    warnings = qualification.get("warnings", [])
+    if qualification.get("_parsing_error"):
+        warnings.append("⚠️ Parsing qualification échoué — score par défaut utilisé")
+    if perplexity_data.get("error"):
+        warnings.append("⚠️ Enrichissement Perplexity échoué — qualification basée uniquement sur la conversation")
+
+    # 6. Vérifier si on doit répondre
+    should_respond = qualification.get("should_respond", True)
+    if not should_respond:
+        print(f"\n🚫 Recommandation: NE PAS RÉPONDRE")
+        print(f"   Raison: {qualification.get('reasoning', '?')}")
+        result["action"] = "NO_RESPONSE"
+        result["warnings"] = warnings
+
+        # Envoyer quand même un email de notification (sans réponse proposée)
+        validation_to = os.getenv("VALIDATION_EMAIL", "pierre-louis@iautomation.fr")
+        try:
+            send_validation_email(
+                to_email=validation_to,
+                email_id=email.id,
+                lead_email=email.lead_email or email.from_email,
+                subject=email.subject or "(sans sujet)",
+                reply_text="[PAS DE RÉPONSE RECOMMANDÉE]\n\n"
+                           f"Raison : {qualification.get('reasoning', 'Prospect hors cible')}",
+                classification=classification,
+                qualification=qualification,
+                perplexity_data=perplexity_data,
+                label=email.label,
+                warnings=warnings,
+            )
+        except Exception as e:
+            print(f"   ⚠️  Erreur envoi notification: {e}")
+        return result
+
+    # 6b. Génération de réponse
     print(f"\n✍️  Génération de la réponse...")
     reply_text = generate_reply(
         thread_text=thread_text,
@@ -270,6 +301,7 @@ def process_email(email, client_config: dict, pv, ppx, send: bool = False) -> di
             qualification=qualification,
             perplexity_data=perplexity_data,
             label=email.label,
+            warnings=warnings,
         )
         result["action"] = "VALIDATION_SENT"
     except Exception as e:

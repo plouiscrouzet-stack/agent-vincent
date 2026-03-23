@@ -105,18 +105,73 @@ RÈGLES pour les suggested_questions :
         }
 
     result_text = response.content[0].text.strip()
-    if "```" in result_text:
-        result_text = result_text.split("```")[1]
-        if result_text.startswith("json"):
-            result_text = result_text[4:]
-        result_text = result_text.strip()
 
+    # Extraction JSON robuste — gère code blocks, texte avant/après, JSON tronqué
+    parsed = _extract_json(result_text)
+    if parsed:
+        # S'assurer que les champs obligatoires existent
+        parsed.setdefault("score", 0.5)
+        parsed.setdefault("recommendation", "ASK_QUESTIONS")
+        parsed.setdefault("suggested_questions", [])
+        parsed.setdefault("reasoning", "")
+        parsed.setdefault("should_respond", True)
+        parsed.setdefault("criteria_evaluation", [])
+        return parsed
+
+    return {
+        "score": 0.5,
+        "recommendation": "ASK_QUESTIONS",
+        "suggested_questions": ["Pourriez-vous me préciser votre activité ?"],
+        "reasoning": f"Parsing failed: {result_text[:200]}",
+        "should_respond": True,
+        "criteria_evaluation": [],
+        "_parsing_error": True,
+    }
+
+
+def _extract_json(text: str) -> dict | None:
+    """Extraction JSON robuste depuis la réponse Claude.
+
+    Gère : code blocks markdown, texte avant/après le JSON,
+    JSON tronqué (accolades non fermées).
+    """
+    import re
+
+    # 1. Essayer le texte brut d'abord
     try:
-        return json.loads(result_text)
+        return json.loads(text)
     except json.JSONDecodeError:
-        return {
-            "score": 0.5,
-            "recommendation": "ASK_QUESTIONS",
-            "suggested_questions": ["Pourriez-vous me préciser votre activité ?"],
-            "reasoning": f"Parsing failed: {result_text[:200]}",
-        }
+        pass
+
+    # 2. Extraire depuis un code block markdown
+    code_block = re.search(r"```(?:json)?\s*\n?(.*?)```", text, re.DOTALL)
+    if code_block:
+        try:
+            return json.loads(code_block.group(1).strip())
+        except json.JSONDecodeError:
+            pass
+
+    # 3. Trouver le premier { et le dernier } — extraire le JSON
+    first_brace = text.find("{")
+    last_brace = text.rfind("}")
+    if first_brace != -1 and last_brace > first_brace:
+        candidate = text[first_brace:last_brace + 1]
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+    # 4. JSON tronqué — essayer de fermer les accolades/crochets manquants
+    if first_brace != -1:
+        candidate = text[first_brace:]
+        # Compter les accolades/crochets ouverts
+        opens = candidate.count("{") - candidate.count("}")
+        open_brackets = candidate.count("[") - candidate.count("]")
+        candidate += "]" * max(0, open_brackets)
+        candidate += "}" * max(0, opens)
+        try:
+            return json.loads(candidate)
+        except json.JSONDecodeError:
+            pass
+
+    return None

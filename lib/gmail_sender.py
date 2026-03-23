@@ -17,6 +17,7 @@ def _build_html(
     label: str,
     approve_url: str,
     reject_url: str,
+    warnings: list = None,
 ) -> str:
     category = classification.get("category", "?")
     reason = classification.get("reason", "")
@@ -42,6 +43,28 @@ def _build_html(
     label_badge = ""
     if label:
         label_badge = f"<span style='background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;margin-left:8px'>{label}</span>"
+
+    # Bannière d'alertes
+    warnings_html = ""
+    if warnings:
+        warning_items = "".join(
+            f"<li style='margin:4px 0;font-size:13px'>{w}</li>" for w in warnings
+        )
+        warnings_html = f"""
+  <div style="background:#fef3c7;border:1px solid #f59e0b;border-radius:8px;padding:12px 16px;margin:12px 24px 0">
+    <p style="margin:0 0 6px;font-weight:700;color:#92400e;font-size:13px">⚠️ ALERTES</p>
+    <ul style="margin:0;padding-left:20px;color:#92400e">{warning_items}</ul>
+  </div>"""
+
+    # Bannière "pas de réponse" si should_respond = false
+    no_response = not qualification.get("should_respond", True)
+    no_response_html = ""
+    if no_response:
+        no_response_html = f"""
+  <div style="background:#fee2e2;border:2px solid #dc2626;border-radius:8px;padding:16px 20px;margin:12px 24px 0">
+    <p style="margin:0;font-weight:700;color:#dc2626;font-size:15px">🚫 RECOMMANDATION : NE PAS RÉPONDRE</p>
+    <p style="margin:6px 0 0;color:#991b1b;font-size:13px">{qualification.get('reasoning', 'Prospect hors cible')}</p>
+  </div>"""
 
     reply_html = reply_text.replace("\n", "<br>")
 
@@ -69,6 +92,9 @@ def _build_html(
     <h2 style="color:#f1f5f9;margin:4px 0 0;font-size:18px">{lead_email} {label_badge}</h2>
     <p style="color:#64748b;margin:4px 0 0;font-size:13px">{subject}</p>
   </div>
+
+  {no_response_html}
+  {warnings_html}
 
   <!-- Classification + Qualification -->
   <div style="background:#fff;padding:20px 24px;border-left:4px solid #6366f1">
@@ -131,6 +157,7 @@ def send_validation_email(
     qualification: dict,
     perplexity_data: dict,
     label: str = None,
+    warnings: list = None,
 ) -> bool:
     """Envoie un email HTML de validation avec boutons Valider/Refuser.
 
@@ -166,6 +193,7 @@ def send_validation_email(
         label=label,
         approve_url=approve_url,
         reject_url=reject_url,
+        warnings=warnings,
     )
 
     msg = MIMEMultipart("alternative")
